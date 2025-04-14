@@ -1,0 +1,17 @@
+# Maven
+target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# OS-specific
+.DS_Store
+
+# Excel & logs
+*.xlsx
+*.log
+
+added new file
+
+new SS

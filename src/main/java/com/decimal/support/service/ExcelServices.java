@@ -43,7 +43,7 @@ import java.util.*;
              Workbook newWorkbook = new XSSFWorkbook()) {
 
             Sheet originalSheet = workbook.getSheetAt(0);
-            Sheet newSheet = newWorkbook.createSheet("Filtered IDs");
+            Sheet newSheet = newWorkbook.createSheet("Daily Report");
 
             // Font and Style for CSR (Yellow background)
             Font srFont = newWorkbook.createFont();

@@ -16,10 +16,11 @@ import java.util.*;
     public class ExcelServices {
 
 
-    private String inputFilePath = "/home/decimal/Downloads/DVES_Ticket_Report14.xlsx";
-    private String outputFilePath = "/home/decimal/Documents/14-04-2025.xlsx";
-    private String grid = "/home/decimal/Downloads/Daily Report updated Grid.xlsx";
-    List<String[]> collectedIDs = new ArrayList<>();
+    private String inputFilePath = "/home/decimal/Downloads/L2_10d_Report.xlsx";  //input file path
+    private String outputFilePath = "/home/decimal/Documents/10Days.xlsx"; //output file path
+    private String grid = "/home/decimal/Downloads/Daily Report updated Grid.xlsx"; //grid input path
+    List<String[]> collectedIDs = new ArrayList<>(); //main list which collects all the data from sheet and then write into new sheet
+
 
     public void filterIssuesAndCollectIDs(String issueTypeToFilter) throws IOException {
 
@@ -36,7 +37,7 @@ import java.util.*;
                                            "Status L2", "Assignee L2", "Created Date L2", "Updated Date L2",
                                              "Status Bug", "Assignee Bug", "Created Date Bug", "Updated Date Bug");
         List<String> srDetail=Arrays.asList("Issue Key", "Project Name", "Client", "English Name", "Reporters EmailId","Feasible Status ","Active PM/BUG", "Status", "Assignee",
-                                            "Created Date", "Updated Date", "Components", "Labels","Tickets Aging");
+                                            "Created Date", "Updated Date", "Components", "Labels","Priority","Tickets Aging");
 
         try (FileInputStream inputStream = new FileInputStream(inputFilePath);
              Workbook workbook = new XSSFWorkbook(inputStream);
@@ -48,7 +49,7 @@ import java.util.*;
             // Font and Style for CSR (Yellow background)
             Font srFont = newWorkbook.createFont();
             srFont.setBold(true);
-            srFont.setColor(IndexedColors.BLACK.getIndex());  // White text color
+            srFont.setColor(IndexedColors.BLACK.getIndex());  // Black text color
             CellStyle srStyle = newWorkbook.createCellStyle();
             srStyle.setFont(srFont);
             srStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
@@ -57,7 +58,7 @@ import java.util.*;
             // Font and Style for CSR (Yellow background)
             Font csrFont = newWorkbook.createFont();
             csrFont.setBold(true);
-            csrFont.setColor(IndexedColors.BLACK.getIndex());  // White text color
+            csrFont.setColor(IndexedColors.BLACK.getIndex());  // black text color
             CellStyle csrStyle = newWorkbook.createCellStyle();
             csrStyle.setFont(csrFont);
             csrStyle.setFillForegroundColor(IndexedColors.LIME.getIndex());
@@ -75,7 +76,7 @@ import java.util.*;
             // Create header row
             String[] headers = {
                     "Issue Key", "Project Name", "Client", "English Name", "Reporters EmailId","Feasible Status ","Active PM/BUG", "Status", "Assignee",
-                    "Created Date", "Updated Date", "Components", "Labels", "Tickets Aging",
+                    "Created Date", "Updated Date", "Components", "Labels","Priority", "Tickets Aging",
                     "CSR", "Status CSR", "Assignee CSR",
                     "Created Date CSR", "Updated Date CSR", "DevOps", "Status DevOps", "Assignee DevOps", "Created Date DevOps", "Updated Date DevOps",
                     "Infra", "Status Infra", "Assignee Infra", "Created Date Infra", "Updated Date Infra", "L2", "Status L2", "Assignee L2",
@@ -115,6 +116,7 @@ import java.util.*;
                 Cell linkissued = row.getCell(12);
                 Cell statusCell=row.getCell(4);
                 Cell AsigneeCell=row.getCell(8);
+                Cell prioritycell=row.getCell(2);
 
 
                 if (issueTypeCell != null && idCell != null) {
@@ -122,6 +124,7 @@ import java.util.*;
                     if (issueType.equalsIgnoreCase(issueTypeToFilter)) {
                         String id = getCellValueAsString(idCell);
                         String projectName = getCellValueAsString(projectnamecell);
+                        String AppName=getCellValueAsString(row.getCell(16));
                         String reporterEmail = getCellValueAsString(reporterEmailcell);
                         String status=getCellValueAsString(statusCell);
                         String asignee=getCellValueAsString(AsigneeCell);
@@ -130,10 +133,11 @@ import java.util.*;
                         String updateDate = getCellValueAsString(updateDatecell);
                         String components = getCellValueAsString(componentcell);
                         String label = getCellValueAsString(labelcell);
+                        String priority=getCellValueAsString(prioritycell);
 
                         String ticketAge="";
-                        String clientcell = ClientNameMap.getOrDefault(projectName, "");
-                        String englishcell = EnglisnameMap.getOrDefault(projectName, "");
+                        String clientcell = ClientNameMap.getOrDefault(AppName, "");
+                        String englishcell = EnglisnameMap.getOrDefault(AppName, "");
                         String feasible =checkFeasibleStatus(status);
                         Map<String, String[]> taskMap = subtasks.getOrDefault(id, new HashMap<>());
                         String[] csrInfo = taskMap.getOrDefault("CSR", new String[5]);
@@ -165,7 +169,7 @@ import java.util.*;
                                 }
 
 
-                            } else if (feasible.equalsIgnoreCase("Rejected")||feasible.equalsIgnoreCase("Resolved")) {
+                            } else if (feasible.equalsIgnoreCase("Rejected")||feasible.equalsIgnoreCase("Resolved")||feasible.equalsIgnoreCase("Closed")) {
                                 for (LocalDate date = created; !date.isAfter(updated); date = date.plusDays(1)) {
                                     DayOfWeek day = date.getDayOfWeek();
                                     if (day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY) {
@@ -182,7 +186,7 @@ import java.util.*;
                         }
                         ticketAge=String.valueOf(days);
 
-                        collectedIDs.add(new String[]{id, projectName, clientcell, englishcell,reporterEmail, feasible,activePmBug, status, asignee,createddate, updateDate, components, label,ticketAge,
+                        collectedIDs.add(new String[]{id, projectName, clientcell, englishcell,reporterEmail, feasible,activePmBug, status, asignee,createddate, updateDate, components, label,priority,ticketAge,
                                 csrInfo[0],csrInfo[1],csrInfo[2],csrInfo[3],csrInfo[4],
                                 DevOpsInfo[0],DevOpsInfo[1],DevOpsInfo[2],DevOpsInfo[3],DevOpsInfo[4],
                                 infraInfo[0],infraInfo[1],infraInfo[2],infraInfo[3],infraInfo[4],
@@ -207,6 +211,11 @@ import java.util.*;
             for (String[] data : collectedIDs) {
                 Row newRow = newSheet.createRow(rowIndex++);
                 for (int colIndex = 0; colIndex < data.length; colIndex++) {
+                    if (colIndex==14) {
+                        int age = Integer.parseInt(data[colIndex]);
+                        newRow.createCell(colIndex).setCellValue(age);
+                        continue;
+                    }
                     newRow.createCell(colIndex).setCellValue(data[colIndex]);
                 }
             }
@@ -217,6 +226,7 @@ import java.util.*;
             }
 
         }
+
     }
 
     private Map<String, String> loadClientData() throws IOException {
@@ -227,14 +237,14 @@ import java.util.*;
             Sheet clientSheet = clientWorkbook.getSheetAt(0);
 
             for (Row row : clientSheet) {
-                Cell projectName = row.getCell(0);
+                Cell Appname = row.getCell(1);
                 Cell client = row.getCell(2);
-                if (projectName != null && client != null) {
-                    String project = getCellValueAsString(projectName);
+                if (Appname != null && client != null) {
+                    String AppName = getCellValueAsString(Appname);
                     String clientName = getCellValueAsString(client);
 
-                    if (!project.isEmpty()) {
-                        ClientNameMap.put(project, clientName);
+                    if (!AppName.isEmpty()) {
+                        ClientNameMap.put(AppName, clientName);
                     }
                 } else {
                     System.out.println();
@@ -255,14 +265,14 @@ import java.util.*;
             Sheet clientSheet = clientWorkbook.getSheetAt(0);
 
             for (Row row : clientSheet) {
-                Cell projectName = row.getCell(0);
+                Cell appname = row.getCell(1);
                 Cell english = row.getCell(3);
-                if (projectName != null && english != null) {
-                    String project = getCellValueAsString(projectName);
+                if (appname != null && english != null) {
+                    String appName = getCellValueAsString(appname);
                     String englishName = getCellValueAsString(english);
 
-                    if (!project.isEmpty()) {
-                        EnglishNameMap.put(project, englishName);
+                    if (!appName.isEmpty()) {
+                        EnglishNameMap.put(appName, englishName);
                     }
                 } else {
                     System.out.println();
@@ -379,7 +389,8 @@ import java.util.*;
         } else if (status.equalsIgnoreCase("New")||status.equalsIgnoreCase("TODO")||status.equalsIgnoreCase("In Progress")||status.equalsIgnoreCase("Under Analysis")
                 ||status.equalsIgnoreCase("ReOpen")||status.equalsIgnoreCase("Scheduled")||status.equalsIgnoreCase("Pending Release")||status.equalsIgnoreCase("Accepted in Roadmap")) {
             return "Active";
-
+        }else if (status.equalsIgnoreCase("Closed")) {
+            return "Closed";
         }
         return "";
 

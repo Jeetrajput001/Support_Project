@@ -1,7 +1,13 @@
 package com.decimal.support.service;
 
+import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.AreaReference;
+import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.usermodel.XSSFPivotTable;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTPivotTableDefinition;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
@@ -16,8 +22,8 @@ import java.util.*;
     public class ExcelServices {
 
 
-    private String inputFilePath = "/home/decimal/Downloads/L2_10d_Report.xlsx";  //input file path
-    private String outputFilePath = "/home/decimal/Documents/10Days.xlsx"; //output file path
+    private String inputFilePath = "/home/decimal/Downloads/DVES_Ticket_Report28.xlsx";  //input file path
+    private String outputFilePath = "/home/decimal/Documents/28-04-2025Test.xlsx"; //output file path
     private String grid = "/home/decimal/Downloads/Daily Report updated Grid.xlsx"; //grid input path
     List<String[]> collectedIDs = new ArrayList<>(); //main list which collects all the data from sheet and then write into new sheet
 
@@ -211,6 +217,10 @@ import java.util.*;
             for (String[] data : collectedIDs) {
                 Row newRow = newSheet.createRow(rowIndex++);
                 for (int colIndex = 0; colIndex < data.length; colIndex++) {
+                    if (colIndex==6 && data[6].equals("")) {
+                        continue;
+
+                    }
                     if (colIndex==14) {
                         int age = Integer.parseInt(data[colIndex]);
                         newRow.createCell(colIndex).setCellValue(age);
@@ -220,7 +230,7 @@ import java.util.*;
                 }
             }
 
-
+            writeSummarySheet(newWorkbook);
             try (FileOutputStream outputStream = new FileOutputStream(outputFilePath)) {
                 newWorkbook.write(outputStream);
             }
@@ -395,6 +405,59 @@ import java.util.*;
         return "";
 
     }
+
+    private void writeSummarySheet(Workbook wb) {
+        // 1) Build your two count‐maps from collectedIDs:
+        Map<String,Integer> feasibleCount = new LinkedHashMap<>();
+        Map<String,Integer> pmBugCount   = new LinkedHashMap<>();
+        for (String[] data : collectedIDs) {
+            String fs = data[5];  // feasible status
+            String pm = data[6];  // active PM/BUG
+            feasibleCount.put(fs, feasibleCount.getOrDefault(fs,0)+1);
+            if (!pm.isEmpty()) {
+                // we count under the same key so the rows line up by feasible-status
+                pmBugCount.put(fs, pmBugCount.getOrDefault(fs,0)+1);
+            }
+        }
+
+        // 2) Create the sheet
+        Sheet summary = wb.createSheet("Pivot");
+
+        // 3) Header row
+        Row h = summary.createRow(0);
+        h.createCell(0).setCellValue("Feasible Status");
+        h.createCell(1).setCellValue("Feasible Status Count");
+        h.createCell(2).setCellValue("Active PM/BUG Count");
+        summary.setColumnWidth(0, 6000);
+        summary.setColumnWidth(1, 6000);
+        summary.setColumnWidth(2, 6000);
+
+        // 4) Data rows
+        int r = 1;
+        int totalF = 0, totalPM = 0;
+        for (Map.Entry<String,Integer> e : feasibleCount.entrySet()) {
+            String fs = e.getKey();
+            int   c1 = e.getValue();
+            int   c2 = pmBugCount.getOrDefault(fs,0);
+            Row row = summary.createRow(r++);
+            row.createCell(0).setCellValue(fs);
+            row.createCell(1).setCellValue(c1);
+            row.createCell(2).setCellValue(c2);
+            totalF += c1;
+            totalPM+= c2;
+        }
+
+        // 5) Grand Total
+        Row tot = summary.createRow(r);
+        tot.createCell(0).setCellValue("Grand Total");
+        tot.createCell(1).setCellValue(totalF);
+        tot.createCell(2).setCellValue(totalPM);
+    }
+
+
+
+
+
 
 
 

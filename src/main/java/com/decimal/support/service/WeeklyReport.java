@@ -44,7 +44,7 @@ public class WeeklyReport {
              Workbook newWorkbook = new XSSFWorkbook()) {
 
             Sheet originalSheet = workbook.getSheetAt(0);
-            Sheet newSheet = newWorkbook.createSheet("Monthly Report");
+            Sheet newSheet = newWorkbook.createSheet("Weekly Report");
 
             // Font and Style for CSR (Yellow background)
             Font srFont = newWorkbook.createFont();

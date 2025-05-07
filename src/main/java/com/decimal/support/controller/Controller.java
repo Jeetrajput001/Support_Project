@@ -1,7 +1,7 @@
 package com.decimal.support.controller;
 
-import com.decimal.support.service.ExcelService;
-import com.decimal.support.service.ExcelServices;
+import com.decimal.support.service.DailyReport;
+import com.decimal.support.service.WeeklyReport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,29 +12,27 @@ import java.io.IOException;
 public class Controller {
 
     @Autowired
-    private ExcelService excelService;
+    private WeeklyReport weeklyReport;
     @Autowired
-    private ExcelServices excelServices;
+    private DailyReport dailyReport;
 
-    @GetMapping("/create-excel")
-    public String createExcel() {
-        String inputFilePath = "/home/decimal/Documents/12-03-2025.xlsx"; // Update with your input file path
-        String outputFilePath = "/home/decimal/Documents/spring.xlsx"; // Update with your desired output file path
-
+    @GetMapping("/weekly-report")
+    public String monthlyReport() {
+        String issueTypeToFilter = "Service Request"; // Specify the issue type you want to filter
         try {
-            excelService.createNewExcelWithSelectedColumns(inputFilePath, outputFilePath);
-            return "New Excel file created successfully!";
+            weeklyReport.filterIssuesAndCollectIDs(issueTypeToFilter);
+            return "Filtered IDs have been written to the new Excel file.";
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error occurred while creating the Excel file.";
+            return "Error occurred while filtering issues.";
         }
     }
 
-        @GetMapping("/filter-issues")
+        @GetMapping("/daily-report")
         public String filterIssues() {
             String issueTypeToFilter = "Service Request"; // Specify the issue type you want to filter
             try {
-                excelServices.filterIssuesAndCollectIDs(issueTypeToFilter);
+                dailyReport.filterIssuesAndCollectIDs(issueTypeToFilter);
                 return "Filtered IDs have been written to the new Excel file.";
             } catch (IOException e) {
                 e.printStackTrace();

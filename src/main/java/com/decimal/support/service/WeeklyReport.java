@@ -13,11 +13,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
-    public class ExcelServices {
+public class WeeklyReport {
 
 
-    private String inputFilePath = "/home/decimal/Downloads/DVES_Ticket_Report28.xlsx";  //input file path
-    private String outputFilePath = "/home/decimal/Documents/28-04-2025Test.xlsx"; //output file path
+    private String inputFilePath = "/home/decimal/Downloads/L2_10d_Report28.xlsx";  //input file path
+    private String outputFilePath = "/home/decimal/Documents/06-05-2025Weekly.xlsx"; //output file path
     private String grid = "/home/decimal/Downloads/Daily Report updated Grid.xlsx"; //grid input path
     List<String[]> collectedIDs = new ArrayList<>(); //main list which collects all the data from sheet and then write into new sheet
 
@@ -30,21 +30,21 @@ import java.util.*;
         List<String> activeStatus= Arrays.asList("Released","New","On Hold","Accepted in Roadmap","Testing In Progress","Awaiting Client Response","In Progress","Pending Release","TODO","Under Analysis");
 
         List<String> yellow=Arrays.asList("CSR","Infra","Developer","PM","Status CSR", "Assignee CSR","Created Date CSR", "Updated Date CSR",
-                                          "Status Infra", "Assignee Infra", "Created Date Infra", "Updated Date Infra",
-                                          "Status Developer", "Assignee Developer", "Created Date Developer", "Updated Date Developer",
-                                           "Status PM", "Assignee PM","Created Date PM", "Updated Date PM");
+                "Status Infra", "Assignee Infra", "Created Date Infra", "Updated Date Infra",
+                "Status Developer", "Assignee Developer", "Created Date Developer", "Updated Date Developer",
+                "Status PM", "Assignee PM","Created Date PM", "Updated Date PM");
         List<String> orange=Arrays.asList("DevOps","L2","BUG","Status DevOps", "Assignee DevOps", "Created Date DevOps", "Updated Date DevOps",
-                                           "Status L2", "Assignee L2", "Created Date L2", "Updated Date L2",
-                                             "Status Bug", "Assignee Bug", "Created Date Bug", "Updated Date Bug");
+                "Status L2", "Assignee L2", "Created Date L2", "Updated Date L2",
+                "Status Bug", "Assignee Bug", "Created Date Bug", "Updated Date Bug");
         List<String> srDetail=Arrays.asList("Issue Key", "Project Name", "Client", "English Name", "Reporters EmailId","Feasible Status ","Active PM/BUG", "Status", "Assignee",
-                                            "Created Date", "Updated Date", "Components", "Labels","Priority","Tickets Aging");
+                "Created Date", "Updated Date", "Components", "Labels","Priority","Tickets Aging");
 
         try (FileInputStream inputStream = new FileInputStream(inputFilePath);
              Workbook workbook = new XSSFWorkbook(inputStream);
              Workbook newWorkbook = new XSSFWorkbook()) {
 
             Sheet originalSheet = workbook.getSheetAt(0);
-            Sheet newSheet = newWorkbook.createSheet("Daily Report");
+            Sheet newSheet = newWorkbook.createSheet("Monthly Report");
 
             // Font and Style for CSR (Yellow background)
             Font srFont = newWorkbook.createFont();
@@ -151,7 +151,7 @@ import java.util.*;
                         if (activeStatus.contains(PMInfo[1])) {
                             activePmBug = "PM";
                         }
-                         else if (activeStatus.contains(BugInfo[1])){
+                        else if (activeStatus.contains(BugInfo[1])){
                             activePmBug="BUG";
                         }
                         long days=0;
@@ -309,53 +309,7 @@ import java.util.*;
     }
 
 
-    public String[] subtask(String linkID,String taskName){
-        String [] result = new String[5];
-        String SrId=linkID;
-//        String type=taskName;
-//        String id ="1";
-//        String status="";
-//        String asignee="";
-//        String createddate="";
-//        String updateDate="";
-        try (FileInputStream inputStream = new FileInputStream(inputFilePath);
-             Workbook workbook = new XSSFWorkbook(inputStream)) {
 
-            Sheet originalSheet = workbook.getSheetAt(0);
-            for (Row row: originalSheet){
-                if (row!=null) {
-                    Cell issueTypeCell = row.getCell(1); // Assuming issue type is in the second column
-                    Cell idCell = row.getCell(0); // Assuming ID is in the first column
-                    Cell linkissued = row.getCell(12); // Assuming linkissued is in the 13th column
-                    Cell statusCell=row.getCell(4);
-                    Cell AsigneeCell=row.getCell(8);
-                    Cell createDatecell = row.getCell(5);
-                    Cell updateDatecell = row.getCell(6);
-                    if (issueTypeCell != null && idCell != null && linkissued != null) {
-                        String issueType = issueTypeCell.getStringCellValue();
-                        String linked = linkissued.getStringCellValue();
-                        if(issueType.equalsIgnoreCase(taskName) && linked.equalsIgnoreCase(SrId)){
-                            result[0]=idCell.getStringCellValue();
-                            result[1]=getCellValueAsString(statusCell);
-                            result[2]=getCellValueAsString(AsigneeCell);
-                            result[3] = getCellValueAsString(createDatecell);
-                            result[4] = getCellValueAsString(updateDatecell);
-
-                            break;
-
-                        }
-                    }
-
-                }
-
-
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return result;
-
-    }
 
     public Map<String, Map<String, String[]>> preprocessSubtasks(String inputFilePath) throws IOException {
         Map<String, Map<String, String[]>> subtaskMap = new HashMap<>();
@@ -400,53 +354,127 @@ import java.util.*;
 
     }
 
+    private boolean isNullOrEmpty(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
     private void writeSummarySheet(Workbook wb) {
-        // 1) Build your two count‐maps from collectedIDs:
-        Map<String,Integer> feasibleCount = new LinkedHashMap<>();
-        Map<String,Integer> pmBugCount   = new LinkedHashMap<>();
+        Map<String,Integer> L2_com_Count = new LinkedHashMap<>();
+        Map<String,Integer> L2_count = new LinkedHashMap<>();
+        Map<String,Integer> L2_L3_Count = new LinkedHashMap<>();
+        Map<String,Integer> L2_PMCount = new LinkedHashMap<>();
+        Map<String,Integer> L2_BUG_Count = new LinkedHashMap<>();
+        Map<String,Integer> L1rejectedcount = new LinkedHashMap<>();
+        Map<String,Integer> L3Count = new LinkedHashMap<>();
+
+        List<String> components = Arrays.asList("vConnect", "vDesigner","vDesigner 2.0","vFlow", "vFlow 2.0");
+
         for (String[] data : collectedIDs) {
-            String fs = data[5];  // feasible status
-            String pm = data[6];  // active PM/BUG
-            feasibleCount.put(fs, feasibleCount.getOrDefault(fs,0)+1);
-            if (!pm.isEmpty()) {
-                // we count under the same key so the rows line up by feasible-status
-                pmBugCount.put(fs, pmBugCount.getOrDefault(fs,0)+1);
+            String comp = data[11];
+            String l2 = data[30];
+
+            if (!isNullOrEmpty(l2) && components.contains(comp)) {
+                L2_com_Count.put(comp, L2_com_Count.getOrDefault(comp, 0) + 1);
+
+                if (!isNullOrEmpty(data[35])) {
+                    L2_L3_Count.put(comp, L2_L3_Count.getOrDefault(comp, 0) + 1);
+                }
+
+                if (isNullOrEmpty(data[35])) {
+                    if (!isNullOrEmpty(data[45])) {
+                        L2_PMCount.put(comp, L2_PMCount.getOrDefault(comp, 0) + 1);
+                    } else if (!isNullOrEmpty(data[40])) {
+                        L2_BUG_Count.put(comp, L2_BUG_Count.getOrDefault(comp, 0) + 1);
+                    }
+                }
+
+                if (isNullOrEmpty(data[35]) && isNullOrEmpty(data[40]) && isNullOrEmpty(data[45])) {
+                    L2_count.put(comp, L2_count.getOrDefault(comp, 0) + 1);
+                }
+            }
+
+            if ("Rejected".equalsIgnoreCase(data[16]) || "ReOpen".equalsIgnoreCase(data[16]) && components.contains(comp) &&
+                    isNullOrEmpty(data[30]) && isNullOrEmpty(data[35]) &&
+                    isNullOrEmpty(data[40]) && isNullOrEmpty(data[45])) {
+                L1rejectedcount.put(comp, L1rejectedcount.getOrDefault(comp, 0) + 1);
+            }
+
+            if (components.contains(comp) && isNullOrEmpty(l2) && !isNullOrEmpty(data[35])) {
+                L3Count.put(comp, L3Count.getOrDefault(comp, 0) + 1);
             }
         }
 
-        // 2) Create the sheet
         Sheet summary = wb.createSheet("Pivot");
 
-        // 3) Header row
-        Row h = summary.createRow(0);
-        h.createCell(0).setCellValue("Feasible Status");
-        h.createCell(1).setCellValue("Feasible Status Count");
-        h.createCell(2).setCellValue("Active PM/BUG Count");
-        summary.setColumnWidth(0, 6000);
-        summary.setColumnWidth(1, 6000);
-        summary.setColumnWidth(2, 6000);
 
-        // 4) Data rows
-        int r = 1;
-        int totalF = 0, totalPM = 0;
-        for (Map.Entry<String,Integer> e : feasibleCount.entrySet()) {
-            String fs = e.getKey();
-            int   c1 = e.getValue();
-            int   c2 = pmBugCount.getOrDefault(fs,0);
-            Row row = summary.createRow(r++);
-            row.createCell(0).setCellValue(fs);
-            row.createCell(1).setCellValue(c1);
-            row.createCell(2).setCellValue(c2);
-            totalF += c1;
-            totalPM+= c2;
+        // Create a bold font and colored style for headers
+        CellStyle headerStyle = wb.createCellStyle();
+        Font headerFont = wb.createFont();
+        headerFont.setBold(true);
+        headerStyle.setFont(headerFont);
+        headerStyle.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        headerStyle.setAlignment(HorizontalAlignment.RIGHT);
+        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        // Header Row
+        Row h = summary.createRow(0);
+        String[] headers = {"Components", "Cumulative L2", "L2", "L2-L3", "L2-PM", "L2-BUG", "L3", "L1 Rejected", "Grand Total"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = h.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+            summary.setColumnWidth(i, 3000);
         }
 
-        // 5) Grand Total
-        Row tot = summary.createRow(r);
-        tot.createCell(0).setCellValue("Grand Total");
-        tot.createCell(1).setCellValue(totalF);
-        tot.createCell(2).setCellValue(totalPM);
+        int r = 1;
+        int totalL2 = 0, totalL2Only = 0, totalL2_L3 = 0, totalPM = 0, totalBug = 0, totalL3 = 0, totalRejected = 0;
+
+        for (String comp : components) {
+            int l2Total = L2_com_Count.getOrDefault(comp, 0);
+            int l2Only = L2_count.getOrDefault(comp, 0);
+            int l2L3 = L2_L3_Count.getOrDefault(comp, 0);
+            int l2PM = L2_PMCount.getOrDefault(comp, 0);
+            int l2Bug = L2_BUG_Count.getOrDefault(comp, 0);
+            int l3 = L3Count.getOrDefault(comp, 0);
+            int rejected = L1rejectedcount.getOrDefault(comp, 0);
+
+            Row row = summary.createRow(r++);
+            row.createCell(0).setCellValue(comp);
+            row.createCell(1).setCellValue(l2Total);
+            row.createCell(2).setCellValue(l2Only);
+            row.createCell(3).setCellValue(l2L3);
+            row.createCell(4).setCellValue(l2PM);
+            row.createCell(5).setCellValue(l2Bug);
+            row.createCell(6).setCellValue(l3);
+            row.createCell(7).setCellValue(rejected);
+            row.createCell(8).setCellValue(l2Total + l3 + rejected);
+
+            totalL2 += l2Total;
+            totalL2Only += l2Only;
+            totalL2_L3 += l2L3;
+            totalPM += l2PM;
+            totalBug += l2Bug;
+            totalL3 += l3;
+            totalRejected += rejected;
+        }
+
+        // Grand Total row
+        Row totalRow = summary.createRow(r);
+        String[] totalValues = {"Grand Total",
+                String.valueOf(totalL2), String.valueOf(totalL2Only), String.valueOf(totalL2_L3),
+                String.valueOf(totalPM), String.valueOf(totalBug), String.valueOf(totalL3),
+                String.valueOf(totalRejected), String.valueOf(totalL2 + totalL3 + totalRejected)
+        };
+
+        for (int i = 0; i < totalValues.length; i++) {
+            Cell cell = totalRow.createCell(i);
+            cell.setCellValue(totalValues[i]);
+            cell.setCellStyle(headerStyle);
+        }
     }
+
+
 
 
 

@@ -16,8 +16,8 @@ import java.util.*;
 public class WeeklyReport {
 
 
-    private String inputFilePath = "/home/decimal/Downloads/L2_10d_Report28.xlsx";  //input file path
-    private String outputFilePath = "/home/decimal/Documents/06-05-2025Weekly.xlsx"; //output file path
+    private String inputFilePath = "/home/decimal/Downloads/L2_10d_Report125.xlsx";  //input file path
+    private String outputFilePath = "/home/decimal/Documents/12-05-2025Weekly.xlsx"; //output file path
     private String grid = "/home/decimal/Downloads/Daily Report updated Grid.xlsx"; //grid input path
     List<String[]> collectedIDs = new ArrayList<>(); //main list which collects all the data from sheet and then write into new sheet
 
